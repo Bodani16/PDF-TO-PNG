@@ -1,0 +1,4 @@
+## 2024-05-18 - [Information Leakage via GUI Error Handling]
+**Vulnerability:** The application was catching generic exceptions during file conversion and displaying the raw exception string directly to the user via a `messagebox.showerror` dialog. This could potentially leak sensitive information like file paths, internal component details, or system state.
+**Learning:** Even desktop applications need to fail securely. Displaying raw error messages to end users in UI components is a common pattern that often gets overlooked compared to web API responses, but it carries similar risks of information leakage.
+**Prevention:** Always log full exception details (including stack traces) securely using the `logging` module (`exc_info=True`), and display a sanitized, generic error message to the user that explains the failure without revealing technical specifics.

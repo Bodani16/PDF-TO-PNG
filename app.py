@@ -1,5 +1,6 @@
 import os
 import tempfile
+import logging
 
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
@@ -26,28 +27,30 @@ FONT_FAMILY = "Segoe UI"
 
 def pdf_to_images(pdf_path, output_format, output_dir, dpi=200):
     doc = fitz.open(pdf_path)
-    base_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    zoom = dpi / 72
-    matrix = fitz.Matrix(zoom, zoom)
+    try:
+        base_name = os.path.splitext(os.path.basename(pdf_path))[0]
+        zoom = dpi / 72
+        matrix = fitz.Matrix(zoom, zoom)
 
-    saved_files = []
-    for page_index in range(len(doc)):
-        page = doc[page_index]
-        pix = page.get_pixmap(matrix=matrix)
-        out_path = os.path.join(
-            output_dir, f"{base_name}_pagina_{page_index + 1}.{output_format}"
-        )
+        saved_files = []
+        for page_index in range(len(doc)):
+            page = doc[page_index]
+            pix = page.get_pixmap(matrix=matrix)
+            out_path = os.path.join(
+                output_dir, f"{base_name}_pagina_{page_index + 1}.{output_format}"
+            )
 
-        if output_format in ("jpg", "jpeg"):
-            img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
-            img.save(out_path, "JPEG", quality=95)
-        else:
-            pix.save(out_path)
+            if output_format in ("jpg", "jpeg"):
+                img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+                img.save(out_path, "JPEG", quality=95)
+            else:
+                pix.save(out_path)
 
-        saved_files.append(out_path)
+            saved_files.append(out_path)
 
-    doc.close()
-    return saved_files
+        return saved_files
+    finally:
+        doc.close()
 
 
 def images_to_pdf(image_paths, output_pdf_path):
@@ -382,8 +385,9 @@ class App(ctk.CTk):
                 "Sucesso", f"{len(saved_files)} imagem(ns) salva(s) em:\n{output_dir}"
             )
         except Exception as exc:
+            logging.error(f"Falha ao converter PDF: {exc}", exc_info=True)
             self.pdf_status.error("Falha ao converter")
-            messagebox.showerror("Erro", f"Falha ao converter PDF:\n{exc}")
+            messagebox.showerror("Erro", "Ocorreu um erro interno ao converter o PDF.")
 
     # ---------------- Imagem -> PDF ----------------
     def _build_img_to_pdf_page(self):
@@ -520,8 +524,9 @@ class App(ctk.CTk):
             self.img_status.success("PDF gerado com sucesso!")
             messagebox.showinfo("Sucesso", f"PDF salvo em:\n{output_pdf_path}")
         except Exception as exc:
+            logging.error(f"Falha ao converter imagens: {exc}", exc_info=True)
             self.img_status.error("Falha ao converter")
-            messagebox.showerror("Erro", f"Falha ao converter imagens:\n{exc}")
+            messagebox.showerror("Erro", "Ocorreu um erro interno ao converter as imagens.")
 
 
 if __name__ == "__main__":
